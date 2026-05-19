@@ -59,7 +59,7 @@ public class Main {
     private static void printResults(String title, Map<String, Integer> results) {
         System.out.println("--- " + title + " ---");
         for (Map.Entry<String, Integer> entry : results.entrySet()) {
-            System.out.printf("  %-20s : %d%n", entry.getKey(), entry.getValue());
+            System.out.printf("  %-24s : %d%n", entry.getKey(), entry.getValue());
         }
         System.out.println();
     }

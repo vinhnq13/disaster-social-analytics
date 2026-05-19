@@ -8,25 +8,28 @@ import java.util.Map;
 
 public class DamageAnalyzer implements Analyzer {
 
+    private static final String DEFAULT_CATEGORY = "other";
+
     private final Map<String, List<String>> categoryKeywords;
 
     public DamageAnalyzer() {
         categoryKeywords = new LinkedHashMap<>();
-        categoryKeywords.put("housing", List.of(
-                "nhà", "mái", "tường", "ngập nhà", "sập nhà", "đổ nhà", "dân cư"
+        categoryKeywords.put("affected_people", List.of(
+                "người dân", "bị thương", "mắc kẹt", "sơ tán", "mất tích", "nạn nhân", "hộ dân"
         ));
-        categoryKeywords.put("transport", List.of(
-                "đường", "cầu", "giao thông", "xe", "sạt lở", "tắc", "phương tiện"
+        categoryKeywords.put("economic_disruption", List.of(
+                "kinh doanh", "sản xuất", "chợ", "cửa hàng", "việc làm", "thu nhập", "gián đoạn"
         ));
-        categoryKeywords.put("human", List.of(
-                "người", "thương vong", "thiệt hại người", "mất tích", "cứu hộ", "dân"
+        categoryKeywords.put("housing_damage", List.of(
+                "nhà", "mái", "sập", "tốc mái", "tường", "ngập nhà", "hư hỏng nhà"
         ));
-        categoryKeywords.put("infrastructure", List.of(
-                "điện", "nước", "trạm", "cống", "hạ tầng", "trường", "bệnh viện", "cột điện"
+        categoryKeywords.put("personal_asset_loss", List.of(
+                "tài sản", "xe máy", "đồ đạc", "vật dụng", "mất trắng", "gia súc", "hoa màu"
         ));
-        categoryKeywords.put("other", List.of(
-                "thiệt hại", "hư hỏng", "đổ", "gãy", "vỡ"
+        categoryKeywords.put("infrastructure_damage", List.of(
+                "đường", "cầu", "điện", "nước", "trường học", "bệnh viện", "viễn thông", "sạt lở"
         ));
+        categoryKeywords.put(DEFAULT_CATEGORY, List.of());
     }
 
     @Override
@@ -38,20 +41,23 @@ public class DamageAnalyzer implements Analyzer {
 
         for (Post post : posts) {
             String text = normalize(post.getContent());
-            String matchedCategory = findCategory(text);
+            String matchedCategory = findBestCategory(text);
             counts.merge(matchedCategory, 1, Integer::sum);
         }
 
         return counts;
     }
 
-    private String findCategory(String text) {
+    private String findBestCategory(String text) {
         for (Map.Entry<String, List<String>> entry : categoryKeywords.entrySet()) {
+            if (DEFAULT_CATEGORY.equals(entry.getKey())) {
+                continue;
+            }
             if (containsAnyKeyword(text, entry.getValue())) {
                 return entry.getKey();
             }
         }
-        return "other";
+        return DEFAULT_CATEGORY;
     }
 
     private boolean containsAnyKeyword(String text, List<String> keywords) {
