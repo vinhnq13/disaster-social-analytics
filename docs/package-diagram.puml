@@ -1,0 +1,72 @@
+@startuml Disaster Social Media Analytics - Package Diagram
+title Disaster Social Media Analytics System\nPackage Diagram
+
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+package "com.dsa" {
+  [Main]
+}
+
+package "com.dsa.model" {
+  [Post]
+}
+
+package "com.dsa.collector" {
+  [DataCollector]
+  [JsonDataCollector]
+}
+
+package "com.dsa.preprocess" {
+  [TextPreprocessor]
+  [BasicTextPreprocessor]
+}
+
+package "com.dsa.service" {
+  [DataService]
+}
+
+package "com.dsa.analyzer" {
+  [Analyzer]
+  [DamageAnalyzer]
+  [SentimentAnalyzer]
+  [SentimentTrendAnalyzer]
+  [ReliefSatisfactionAnalyzer]
+}
+
+' Package-level dependencies
+
+com.dsa.service ..> com.dsa.collector : uses
+com.dsa.service ..> com.dsa.model : uses
+
+com.dsa.collector ..> com.dsa.model : uses
+
+com.dsa.analyzer ..> com.dsa.model : uses
+com.dsa.analyzer ..> com.dsa.preprocess : uses
+
+com.dsa ..> com.dsa.service : uses
+com.dsa ..> com.dsa.analyzer : uses
+
+note bottom of com.dsa.model
+  Domain layer:
+  shared data types
+end note
+
+note bottom of com.dsa.collector
+  Data collection layer
+end note
+
+note bottom of com.dsa.preprocess
+  Text preprocessing layer
+end note
+
+note bottom of com.dsa.service
+  Loads posts via DataCollector
+end note
+
+note bottom of com.dsa.analyzer
+  Analysis strategies
+end note
+
+@enduml
