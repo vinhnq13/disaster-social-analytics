@@ -1,6 +1,7 @@
 package com.dsa.analyzer;
 
 import com.dsa.model.Post;
+import com.dsa.preprocess.TextPreprocessor;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -9,9 +10,11 @@ import java.util.TreeMap;
 
 public class SentimentTrendAnalyzer {
 
+    private final TextPreprocessor textPreprocessor;
     private final Map<String, List<String>> sentimentKeywords;
 
-    public SentimentTrendAnalyzer() {
+    public SentimentTrendAnalyzer(TextPreprocessor textPreprocessor) {
+        this.textPreprocessor = textPreprocessor;
         sentimentKeywords = new LinkedHashMap<>();
         sentimentKeywords.put("positive", List.of(
                 "cứu trợ", "an toàn", "đoàn kết", "hỗ trợ", "may mắn", "cảm ơn", "hy vọng", "ổn"
@@ -31,7 +34,7 @@ public class SentimentTrendAnalyzer {
             String date = normalizeDate(post.getDate());
             Map<String, Integer> dayCounts = trendByDate.computeIfAbsent(date, d -> createEmptyDayCounts());
 
-            String sentiment = classifySentiment(normalize(post.getContent()));
+            String sentiment = classifySentiment(textPreprocessor.clean(post.getContent()));
             dayCounts.merge(sentiment, 1, Integer::sum);
         }
 
@@ -61,18 +64,11 @@ public class SentimentTrendAnalyzer {
 
     private boolean containsAnyKeyword(String text, List<String> keywords) {
         for (String keyword : keywords) {
-            if (text.contains(normalize(keyword))) {
+            if (text.contains(textPreprocessor.clean(keyword))) {
                 return true;
             }
         }
         return false;
-    }
-
-    private String normalize(String text) {
-        if (text == null) {
-            return "";
-        }
-        return text.toLowerCase().trim();
     }
 
     private String normalizeDate(String date) {

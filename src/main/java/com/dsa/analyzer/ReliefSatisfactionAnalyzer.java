@@ -1,6 +1,7 @@
 package com.dsa.analyzer;
 
 import com.dsa.model.Post;
+import com.dsa.preprocess.TextPreprocessor;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -17,10 +18,12 @@ public class ReliefSatisfactionAnalyzer implements Analyzer {
             "positive", "negative", "neutral"
     );
 
+    private final TextPreprocessor textPreprocessor;
     private final Map<String, List<String>> reliefKeywords;
     private final Map<String, List<String>> sentimentKeywords;
 
-    public ReliefSatisfactionAnalyzer() {
+    public ReliefSatisfactionAnalyzer(TextPreprocessor textPreprocessor) {
+        this.textPreprocessor = textPreprocessor;
         reliefKeywords = new LinkedHashMap<>();
         reliefKeywords.put("food", List.of(
                 "lương thực", "gạo", "mì", "thực phẩm", "suất ăn", "đồ ăn", "nước uống", "nước sạch"
@@ -55,7 +58,7 @@ public class ReliefSatisfactionAnalyzer implements Analyzer {
         Map<String, Integer> counts = createEmptyCounts();
 
         for (Post post : posts) {
-            String text = normalize(post.getContent());
+            String text = textPreprocessor.clean(post.getContent());
             List<String> matchedCategories = findMatchedCategories(text);
 
             if (matchedCategories.isEmpty()) {
@@ -107,17 +110,10 @@ public class ReliefSatisfactionAnalyzer implements Analyzer {
 
     private boolean containsAnyKeyword(String text, List<String> keywords) {
         for (String keyword : keywords) {
-            if (text.contains(normalize(keyword))) {
+            if (text.contains(textPreprocessor.clean(keyword))) {
                 return true;
             }
         }
         return false;
-    }
-
-    private String normalize(String text) {
-        if (text == null) {
-            return "";
-        }
-        return text.toLowerCase().trim();
     }
 }

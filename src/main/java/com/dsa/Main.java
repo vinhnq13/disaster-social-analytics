@@ -6,6 +6,8 @@ import com.dsa.analyzer.ReliefSatisfactionAnalyzer;
 import com.dsa.analyzer.SentimentAnalyzer;
 import com.dsa.analyzer.SentimentTrendAnalyzer;
 import com.dsa.model.Post;
+import com.dsa.preprocess.BasicTextPreprocessor;
+import com.dsa.preprocess.TextPreprocessor;
 import com.dsa.service.DataService;
 
 import java.util.List;
@@ -26,16 +28,16 @@ public class Main {
 
         System.out.println("Loaded " + posts.size() + " posts.\n");
 
-        Analyzer damageAnalyzer = new DamageAnalyzer();
-        Analyzer sentimentAnalyzer = new SentimentAnalyzer();
-        Analyzer reliefSatisfactionAnalyzer = new ReliefSatisfactionAnalyzer();
+        TextPreprocessor textPreprocessor = new BasicTextPreprocessor();
+
+        Analyzer damageAnalyzer = new DamageAnalyzer(textPreprocessor);
+        Analyzer sentimentAnalyzer = new SentimentAnalyzer(textPreprocessor);
+        Analyzer reliefSatisfactionAnalyzer = new ReliefSatisfactionAnalyzer(textPreprocessor);
+        SentimentTrendAnalyzer sentimentTrendAnalyzer = new SentimentTrendAnalyzer(textPreprocessor);
 
         printResults("Damage Analysis", damageAnalyzer.analyze(posts));
         printResults("Sentiment Analysis", sentimentAnalyzer.analyze(posts));
-
-        SentimentTrendAnalyzer sentimentTrendAnalyzer = new SentimentTrendAnalyzer();
         printSentimentTrendResults(sentimentTrendAnalyzer.analyze(posts));
-
         printResults("Relief Satisfaction Analysis", reliefSatisfactionAnalyzer.analyze(posts));
     }
 

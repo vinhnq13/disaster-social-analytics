@@ -1,6 +1,7 @@
 package com.dsa.analyzer;
 
 import com.dsa.model.Post;
+import com.dsa.preprocess.TextPreprocessor;
 
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -10,9 +11,11 @@ public class DamageAnalyzer implements Analyzer {
 
     private static final String DEFAULT_CATEGORY = "other";
 
+    private final TextPreprocessor textPreprocessor;
     private final Map<String, List<String>> categoryKeywords;
 
-    public DamageAnalyzer() {
+    public DamageAnalyzer(TextPreprocessor textPreprocessor) {
+        this.textPreprocessor = textPreprocessor;
         categoryKeywords = new LinkedHashMap<>();
         categoryKeywords.put("affected_people", List.of(
                 "người dân", "bị thương", "mắc kẹt", "sơ tán", "mất tích", "nạn nhân", "hộ dân"
@@ -40,7 +43,7 @@ public class DamageAnalyzer implements Analyzer {
         }
 
         for (Post post : posts) {
-            String text = normalize(post.getContent());
+            String text = textPreprocessor.clean(post.getContent());
             String matchedCategory = findBestCategory(text);
             counts.merge(matchedCategory, 1, Integer::sum);
         }
@@ -62,17 +65,10 @@ public class DamageAnalyzer implements Analyzer {
 
     private boolean containsAnyKeyword(String text, List<String> keywords) {
         for (String keyword : keywords) {
-            if (text.contains(normalize(keyword))) {
+            if (text.contains(textPreprocessor.clean(keyword))) {
                 return true;
             }
         }
         return false;
-    }
-
-    private String normalize(String text) {
-        if (text == null) {
-            return "";
-        }
-        return text.toLowerCase().trim();
     }
 }
