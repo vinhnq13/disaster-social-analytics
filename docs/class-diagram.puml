@@ -1,0 +1,175 @@
+@startuml Disaster Social Media Analytics - Class Diagram
+title Disaster Social Media Analytics System\nClass Diagram (OOP Architecture)
+
+skinparam classAttributeIconSize 0
+skinparam shadowing false
+skinparam packageStyle rectangle
+skinparam linetype ortho
+
+' --- Model ---
+
+package "com.dsa.model" {
+  class Post {
+    - content : String
+    - date : String
+    - source : String
+    --
+    + Post()
+    + Post(content : String, date : String, source : String)
+    + getContent() : String
+    + setContent(content : String) : void
+    + getDate() : String
+    + setDate(date : String) : void
+    + getSource() : String
+    + setSource(source : String) : void
+    + toString() : String
+  }
+}
+
+' --- Collector ---
+
+package "com.dsa.collector" {
+  interface DataCollector {
+    + collect() : List<Post>
+  }
+
+  class JsonDataCollector {
+    - {static} POSTS_RESOURCE : String
+    - gson : Gson
+    --
+    + JsonDataCollector()
+    + collect() : List<Post>
+  }
+
+  DataCollector <|.. JsonDataCollector
+}
+
+' --- Preprocess ---
+
+package "com.dsa.preprocess" {
+  interface TextPreprocessor {
+    + clean(text : String) : String
+  }
+
+  class BasicTextPreprocessor {
+    - {static} URL_PATTERN : Pattern
+    - {static} HASHTAG_SYMBOL_PATTERN : Pattern
+    - {static} PUNCTUATION_PATTERN : Pattern
+    - {static} EXTRA_SPACES_PATTERN : Pattern
+    --
+    + clean(text : String) : String
+  }
+
+  TextPreprocessor <|.. BasicTextPreprocessor
+}
+
+' --- Service ---
+
+package "com.dsa.service" {
+  class DataService {
+    - dataCollector : DataCollector
+    --
+    + DataService()
+    + DataService(dataCollector : DataCollector)
+    + loadPosts() : List<Post>
+  }
+}
+
+' --- Analyzer ---
+
+package "com.dsa.analyzer" {
+  interface Analyzer {
+    + analyze(posts : List<Post>) : Map<String, Integer>
+  }
+
+  class DamageAnalyzer {
+    - textPreprocessor : TextPreprocessor
+    - categoryKeywords : Map<String, List<String>>
+    --
+    + DamageAnalyzer(textPreprocessor : TextPreprocessor)
+    + analyze(posts : List<Post>) : Map<String, Integer>
+  }
+
+  class SentimentAnalyzer {
+    - textPreprocessor : TextPreprocessor
+    - sentimentKeywords : Map<String, List<String>>
+    --
+    + SentimentAnalyzer(textPreprocessor : TextPreprocessor)
+    + analyze(posts : List<Post>) : Map<String, Integer>
+  }
+
+  class ReliefSatisfactionAnalyzer {
+    - textPreprocessor : TextPreprocessor
+    - reliefKeywords : Map<String, List<String>>
+    - sentimentKeywords : Map<String, List<String>>
+    --
+    + ReliefSatisfactionAnalyzer(textPreprocessor : TextPreprocessor)
+    + analyze(posts : List<Post>) : Map<String, Integer>
+  }
+
+  class SentimentTrendAnalyzer {
+    - textPreprocessor : TextPreprocessor
+    - sentimentKeywords : Map<String, List<String>>
+    --
+    + SentimentTrendAnalyzer(textPreprocessor : TextPreprocessor)
+    + analyze(posts : List<Post>) : Map<String, Map<String, Integer>>
+  }
+
+  Analyzer <|.. DamageAnalyzer
+  Analyzer <|.. SentimentAnalyzer
+  Analyzer <|.. ReliefSatisfactionAnalyzer
+}
+
+' --- Application entry ---
+
+package "com.dsa" {
+  class Main {
+    + {static} main(args : String[]) : void
+    - {static} printResults(title : String, results : Map<String, Integer>) : void
+    - {static} printSentimentTrendResults(trendByDate : Map<String, Map<String, Integer>>) : void
+  }
+}
+
+' --- Dependencies ---
+
+Main --> DataService : uses
+Main ..> BasicTextPreprocessor : creates
+Main ..> DamageAnalyzer : creates
+Main ..> SentimentAnalyzer : creates
+Main ..> ReliefSatisfactionAnalyzer : creates
+Main ..> SentimentTrendAnalyzer : creates
+Main ..> Analyzer : uses
+
+DataService o--> DataCollector : uses
+DataService ..> JsonDataCollector : default
+
+JsonDataCollector ..> Post : returns
+
+DataService ..> Post : returns
+
+DamageAnalyzer --> TextPreprocessor : uses
+SentimentAnalyzer --> TextPreprocessor : uses
+ReliefSatisfactionAnalyzer --> TextPreprocessor : uses
+SentimentTrendAnalyzer --> TextPreprocessor : uses
+
+DamageAnalyzer ..> Post : analyzes
+SentimentAnalyzer ..> Post : analyzes
+ReliefSatisfactionAnalyzer ..> Post : analyzes
+SentimentTrendAnalyzer ..> Post : analyzes
+
+Analyzer ..> Post : analyzes
+
+note right of SentimentTrendAnalyzer
+  Does not implement Analyzer
+  (different return type:
+  nested Map by date)
+end note
+
+note bottom of DataCollector
+  Future collectors:
+  YouTubeDataCollector,
+  FacebookDataCollector,
+  XDataCollector
+end note
+
+@enduml
