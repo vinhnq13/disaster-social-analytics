@@ -1,43 +1,63 @@
-# Disaster Social Media Analytics
+# Disaster Social Media Analytics System
 
-A console-based Java application that analyzes social media posts related to natural disasters. The goal is to support **humanitarian logistics** by turning informal online reports into structured insights—such as damage categories and public sentiment—that can help responders prioritize aid.
+A console-based Java application for an **Object-Oriented Programming (OOP)** university project. The system analyzes social media–style posts about natural disasters and turns informal public reports into structured insights—damage types, sentiment, trends over time, and relief satisfaction—to support **humanitarian logistics** planning.
 
-This project was built as an **Object-Oriented Programming (OOP)** coursework application. The current version focuses on a clean, extensible core; a graphical user interface is planned for a later phase.
-
----
-
-## Project Overview
-
-During disasters, people often share real-time updates on platforms like Facebook, Zalo, and Twitter: flooded streets, damaged homes, requests for relief, and expressions of fear or hope. This system reads those posts from a JSON dataset, classifies them by **type of damage** and **sentiment**, and prints summary statistics to the console.
-
-The design separates **data loading**, **domain models**, and **analysis logic** so new analyzers or data sources can be added without rewriting the whole application.
+The current release focuses on a clean, extensible backend. A graphical dashboard is planned as a future enhancement.
 
 ---
 
-## Main Features
+## 1. Overview
+
+During disasters, communities share urgent updates online: flooded roads, damaged homes, calls for food or medicine, and expressions of fear or gratitude. Responders need a fast way to summarize this information.
+
+**Disaster Social Media Analytics System** loads a dataset of Vietnamese posts, preprocesses text, and runs several analyzers that print aggregated results to the console. The architecture separates **data collection**, **preprocessing**, **domain models**, and **analysis** so new data sources or analyzers can be added without rewriting the whole application.
+
+---
+
+## 2. Disaster case study
+
+This project uses a **standardized dataset** inspired by real events around **Typhoon Yagi (Bão Yagi)** and related flooding in Vietnam.
+
+| Aspect | Details |
+|--------|---------|
+| **Disaster** | Typhoon Yagi and post-storm flooding |
+| **Time range** | 2024-09-06 to 2024-09-20 |
+| **Platforms** | Facebook, TikTok, YouTube, X |
+| **Sample themes** | Storm impact, rescue, relief distribution, infrastructure failure |
+| **Representative keywords** | bão Yagi, ngập lụt, cứu trợ, sập nhà, mất điện, đường ngập |
+
+Posts are stored in `src/main/resources/data/posts.json` (50 entries). Each record includes `content`, `date`, and `source`.
+
+---
+
+## 3. Main features
 
 | Feature | Description |
-|--------|-------------|
-| **Load posts from JSON** | Reads Vietnamese sample posts from `src/main/resources/data/posts.json` using Gson. |
-| **Damage classification** | Groups posts into categories: `housing`, `transport`, `human`, `infrastructure`, and `other`. |
-| **Sentiment analysis** | Groups posts into: `positive`, `negative`, and `neutral`. |
-| **Extensible analyzer architecture** | All analyzers implement a common `Analyzer` interface, making it easy to add new analysis types. |
+|---------|-------------|
+| **Load posts from JSON** | Reads the dataset via Gson from the classpath. |
+| **Data collection layer** | `DataCollector` interface with `JsonDataCollector`; `DataService` delegates collection to the active collector. |
+| **Text preprocessing layer** | `TextPreprocessor` / `BasicTextPreprocessor` normalizes text before keyword matching (lowercase, URL removal, hashtag cleanup, punctuation and spacing). |
+| **Damage classification** | `DamageAnalyzer` assigns each post to one best-matching category: `affected_people`, `economic_disruption`, `housing_damage`, `personal_asset_loss`, `infrastructure_damage`, or `other`. |
+| **Sentiment analysis** | `SentimentAnalyzer` classifies posts as `positive`, `negative`, or `neutral`. |
+| **Sentiment trend analysis** | `SentimentTrendAnalyzer` groups sentiment counts by date (ascending). |
+| **Relief satisfaction analysis** | `ReliefSatisfactionAnalyzer` counts satisfaction-style sentiment per relief type: `food`, `medical`, `cash`, `housing`, `transport`. |
 
-Both analyzers use **keyword matching** on post content. Keyword lists are organized in maps so you can extend categories by adding new entries without changing the core loop logic.
+All analyzers use **keyword matching** on preprocessed Vietnamese text. Keyword lists live in maps inside each analyzer class for straightforward extension in coursework.
 
 ---
 
-## Technologies
+## 4. Technologies
 
 | Technology | Role |
 |------------|------|
-| **Java 17** | Language and runtime (records, modern APIs, LTS version). |
-| **Maven** | Build tool, dependency management, and `exec:java` runner. |
-| **Gson** | JSON parsing for loading posts into Java objects. |
+| **Java 17** | Language and LTS runtime |
+| **Maven** | Build, dependencies, `exec:java` runner |
+| **Gson** | JSON parsing for posts |
+| **Git / GitHub** | Version control and project hosting |
 
 ---
 
-## Project Structure
+## 5. Project structure
 
 ```
 disaster-social-analytics/
@@ -45,36 +65,93 @@ disaster-social-analytics/
 ├── README.md
 └── src/main/
     ├── java/com/dsa/
-    │   ├── Main.java                 # Application entry point
+    │   ├── Main.java
     │   ├── model/
-    │   │   └── Post.java             # Domain model (content, date, source)
+    │   │   └── Post.java
+    │   ├── collector/
+    │   │   ├── DataCollector.java
+    │   │   └── JsonDataCollector.java
+    │   ├── preprocess/
+    │   │   ├── TextPreprocessor.java
+    │   │   └── BasicTextPreprocessor.java
     │   ├── service/
-    │   │   └── DataService.java      # Loads posts from JSON
+    │   │   └── DataService.java
     │   └── analyzer/
-    │       ├── Analyzer.java         # Common analyzer interface
-    │       ├── DamageAnalyzer.java   # Damage category classification
-    │       └── SentimentAnalyzer.java# Sentiment classification
+    │       ├── Analyzer.java
+    │       ├── DamageAnalyzer.java
+    │       ├── SentimentAnalyzer.java
+    │       ├── SentimentTrendAnalyzer.java
+    │       └── ReliefSatisfactionAnalyzer.java
     └── resources/data/
-        └── posts.json                # Sample disaster-related posts
+        └── posts.json
 ```
 
-**Package root:** `com.dsa`
+### Package overview
+
+| Package | Responsibility |
+|---------|----------------|
+| **`com.dsa.model`** | Domain objects (`Post`: content, date, source). |
+| **`com.dsa.collector`** | Data acquisition (`DataCollector`, `JsonDataCollector`). Future: `YouTubeDataCollector`, `FacebookDataCollector`, `XDataCollector`. |
+| **`com.dsa.preprocess`** | Text cleaning before analysis (`TextPreprocessor`, `BasicTextPreprocessor`). |
+| **`com.dsa.service`** | Application service that loads posts through a `DataCollector` (`DataService`). |
+| **`com.dsa.analyzer`** | Analysis strategies: damage, sentiment, trends, relief satisfaction. |
 
 ---
 
-## Prerequisites
+## 6. OOP principles applied
 
-- **JDK 17** or newer  
-- **Apache Maven 3.6+**
+### Encapsulation
 
-Verify your setup:
+`Post` hides fields behind getters and setters. Each analyzer encapsulates its keyword maps and classification logic. Collectors and preprocessors encapsulate I/O and text rules.
+
+### Interface-based design
+
+- `DataCollector` — how posts are obtained  
+- `TextPreprocessor` — how text is normalized  
+- `Analyzer` — common contract `Map<String, Integer> analyze(List<Post>)` for flat result analyzers  
+
+### Polymorphism
+
+`Main` can treat `DamageAnalyzer`, `SentimentAnalyzer`, and `ReliefSatisfactionAnalyzer` as `Analyzer` references. `DataService` works with any `DataCollector` implementation. All analyzers share the same `TextPreprocessor` instance injected at construction time.
+
+### Strategy Pattern–like analyzer architecture
+
+Each analyzer is a **strategy** for processing a list of posts. New analysis types (e.g. location extraction) can be added by implementing `Analyzer` or following the same constructor-injection pattern as `SentimentTrendAnalyzer`, without modifying existing analyzer code.
+
+### Separation of concerns
+
+| Layer | Concern |
+|-------|---------|
+| `model` | What data looks like |
+| `collector` | Where data comes from |
+| `preprocess` | How text is prepared |
+| `service` | How the app loads data |
+| `analyzer` | What insights are computed |
+| `Main` | Orchestration and console output |
+
+### Extensibility
+
+- Swap `JsonDataCollector` for API-based collectors.  
+- Swap `BasicTextPreprocessor` for advanced normalization.  
+- Add analyzers or keyword categories via new classes or map entries.  
+
+---
+
+## 7. How to run
+
+### Prerequisites
+
+- JDK **17** or newer  
+- Apache Maven **3.6+**
+
+Check your environment:
 
 ```bash
 java -version
 mvn -version
 ```
 
-Maven must use Java 17 for compilation. If `mvn -version` shows an older Java version, set `JAVA_HOME` to your JDK 17 installation before building.
+Ensure Maven uses Java 17. If `mvn -version` reports an older JDK, set `JAVA_HOME` to your Java 17 installation.
 
 **Windows (PowerShell) example:**
 
@@ -82,109 +159,93 @@ Maven must use Java 17 for compilation. If `mvn -version` shows an older Java ve
 $env:JAVA_HOME = "C:\Program Files\Eclipse Adoptium\jdk-17.0.18.8-hotspot"
 ```
 
-Adjust the path to match your JDK 17 install location.
+### Run the application
+
+From the project root:
+
+```bash
+mvn clean compile exec:java
+```
+
+The program loads posts, runs all analyzers, and prints four report sections to the console.
 
 ---
 
-## How to Run
-
-From the project root directory:
-
-```bash
-mvn compile exec:java
-```
-
-The application will:
-
-1. Load posts from `posts.json`
-2. Run damage and sentiment analyzers
-3. Print categorized counts to the console
-
-**Example output:**
+## 8. Sample output
 
 ```
 === Disaster Social Media Analytics ===
 
-Loaded 18 posts.
+Loaded 50 posts.
 
 --- Damage Analysis ---
-  housing          : 4
-  transport        : 4
-  human            : 3
-  infrastructure   : 4
-  other            : 3
+  affected_people          : 6
+  economic_disruption      : 5
+  housing_damage           : 12
+  personal_asset_loss      : 4
+  infrastructure_damage    : 14
+  other                    : 9
 
 --- Sentiment Analysis ---
-  positive         : 5
-  negative         : 3
-  neutral          : 10
+  positive                 : 20
+  negative                 : 5
+  neutral                  : 25
+
+--- Sentiment Trend Analysis ---
+  Date: 2024-09-06
+    positive     : 0
+    negative     : 0
+    neutral      : 3
+
+  Date: 2024-09-07
+    positive     : 1
+    negative     : 1
+    neutral      : 2
+
+  ... (additional dates through 2024-09-20)
+
+--- Relief Satisfaction Analysis ---
+  food_positive            : 4
+  food_negative            : 1
+  food_neutral             : 5
+  medical_positive         : 1
+  medical_negative         : 1
+  medical_neutral          : 2
+  cash_positive            : 3
+  cash_negative            : 0
+  cash_neutral             : 1
+  housing_positive         : 5
+  housing_negative         : 1
+  housing_neutral          : 7
+  transport_positive       : 1
+  transport_negative       : 0
+  transport_neutral        : 7
 ```
 
 ---
 
-## OOP Techniques Used
+## 9. Limitations
 
-### Encapsulation
+- The dataset is **simulated and standardized**, not scraped live from social networks. Real-time APIs for Facebook, TikTok, YouTube, and X require authentication, quotas, and compliance review that are outside the scope of this coursework.
+- Classification uses **simple keyword matching**, not machine learning or contextual NLP.
+- Vietnamese text handling does not include full diacritic normalization or stemming.
+- `SentimentTrendAnalyzer` and `ReliefSatisfactionAnalyzer` use slightly different sentiment keyword sets where relief-specific wording is needed.
+- Output is **console-only**; there is no persistent storage or visualization yet.
 
-The `Post` class wraps `content`, `date`, and `source` as private fields with getters and setters. External code interacts with posts through a controlled API instead of raw data structures.
-
-### Interface
-
-`Analyzer` defines a single contract:
-
-```java
-Map<String, Integer> analyze(List<Post> posts);
-```
-
-Any class that implements this interface can be used wherever an analyzer is needed.
-
-### Polymorphism
-
-`Main` treats `DamageAnalyzer` and `SentimentAnalyzer` as `Analyzer` references. The same `analyze()` call works for different implementations, and the program does not need to know each analyzer’s internal logic.
-
-### Strategy Pattern
-
-Each analyzer is a **strategy** for processing a list of posts. You can swap or add strategies (e.g. a future `LocationAnalyzer`) without modifying existing analyzer classes—only wiring in `Main` (or a future coordinator class) changes.
-
-### Separation of Concerns
-
-| Layer | Responsibility |
-|-------|----------------|
-| `model` | Data representation (`Post`) |
-| `service` | I/O and persistence (`DataService`) |
-| `analyzer` | Business rules for classification |
-| `Main` | Orchestration and console output |
-
-This layout keeps the codebase easy to read, test, and extend for a university OOP project.
+These limits are acceptable for demonstrating OOP structure and extensibility in a university project.
 
 ---
 
-## Sample Data
+## 10. Future improvements
 
-`posts.json` contains **18 Vietnamese-language sample posts** about events such as Typhoon Yagi, flooding, infrastructure damage, and relief efforts. Each entry includes:
-
-- `content` — post text  
-- `date` — date string (e.g. `2024-09-07`)  
-- `source` — platform (e.g. Facebook, Zalo, Twitter)
-
-You can edit this file to test how keyword changes affect classification results.
-
----
-
-## Future Improvements
-
-- **JavaFX dashboard** — charts and tables for damage and sentiment summaries instead of console-only output.  
-- **More data sources** — APIs, CSV files, or database connectors instead of a single JSON file.  
-- **More advanced NLP model** — move from keyword matching to machine learning or pre-trained language models for better accuracy on informal Vietnamese text.
-
----
-
-## Authors & Course Context
-
-This repository is intended for an **OOP course project** demonstrating clean class design, interfaces, and extensibility in Java. Contributions and extensions (new analyzers, UI, data sources) fit naturally into the existing package structure.
+- **JavaFX dashboard** — charts and tables for damage, sentiment, trends, and relief satisfaction  
+- **Real social media API collectors** — `YouTubeDataCollector`, `FacebookDataCollector`, `XDataCollector` implementing `DataCollector`  
+- **Database storage** — persist posts and analysis results for historical queries  
+- **Advanced NLP model** — improve accuracy on informal Vietnamese disaster text  
+- **Configurable keyword files** — load category and sentiment keywords from JSON or YAML without recompiling  
 
 ---
 
 ## License
 
-Academic / educational use. Add a license file here if your course or institution requires one.
+Academic / educational use. Add a license file if required by your course or institution.
