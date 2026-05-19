@@ -2,6 +2,7 @@ package com.dsa;
 
 import com.dsa.analyzer.Analyzer;
 import com.dsa.analyzer.DamageAnalyzer;
+import com.dsa.analyzer.ReliefSatisfactionAnalyzer;
 import com.dsa.analyzer.SentimentAnalyzer;
 import com.dsa.model.Post;
 import com.dsa.service.DataService;
@@ -26,15 +27,17 @@ public class Main {
 
         Analyzer damageAnalyzer = new DamageAnalyzer();
         Analyzer sentimentAnalyzer = new SentimentAnalyzer();
+        Analyzer reliefSatisfactionAnalyzer = new ReliefSatisfactionAnalyzer();
 
         printResults("Damage Analysis", damageAnalyzer.analyze(posts));
         printResults("Sentiment Analysis", sentimentAnalyzer.analyze(posts));
+        printResults("Relief Satisfaction Analysis", reliefSatisfactionAnalyzer.analyze(posts));
     }
 
     private static void printResults(String title, Map<String, Integer> results) {
         System.out.println("--- " + title + " ---");
         for (Map.Entry<String, Integer> entry : results.entrySet()) {
-            System.out.printf("  %-16s : %d%n", entry.getKey(), entry.getValue());
+            System.out.printf("  %-20s : %d%n", entry.getKey(), entry.getValue());
         }
         System.out.println();
     }
