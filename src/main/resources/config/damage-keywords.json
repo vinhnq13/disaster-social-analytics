@@ -1,0 +1,8 @@
+{
+  "affected_people": ["người dân", "bị thương", "mắc kẹt", "sơ tán", "mất tích", "nạn nhân", "hộ dân", "người già", "trẻ em"],
+  "economic_disruption": ["kinh doanh", "sản xuất", "chợ", "cửa hàng", "việc làm", "thu nhập", "gián đoạn", "buôn bán"],
+  "housing_damage": ["nhà", "mái", "sập", "tốc mái", "tường", "ngập nhà", "hư hỏng nhà", "nhà cửa"],
+  "personal_asset_loss": ["tài sản", "xe máy", "đồ đạc", "vật dụng", "mất trắng", "gia súc", "hoa màu", "tài sản cá nhân"],
+  "infrastructure_damage": ["đường", "cầu", "điện", "nước", "trường học", "bệnh viện", "viễn thông", "sạt lở", "cơ sở hạ tầng"],
+  "other": []
+}

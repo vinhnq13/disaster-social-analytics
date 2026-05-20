@@ -1,0 +1,7 @@
+{
+  "food": ["lương thực", "thực phẩm", "gạo", "mì tôm", "nước uống", "đồ ăn", "suất ăn"],
+  "medical": ["thuốc", "y tế", "bác sĩ", "khám bệnh", "sơ cứu", "vật tư y tế"],
+  "cash": ["tiền mặt", "hỗ trợ tiền", "kinh phí", "trợ cấp", "quyên góp tiền"],
+  "housing": ["chỗ ở", "nhà tạm", "nơi ở", "lều", "khu tạm cư"],
+  "transport": ["thuyền", "xe", "vận chuyển", "đi lại", "di chuyển", "cứu hộ"]
+}

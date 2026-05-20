@@ -1,0 +1,5 @@
+{
+  "positive": ["cảm ơn", "hỗ trợ", "kịp thời", "đã nhận được", "ổn định", "an toàn", "tốt", "ấm lòng", "may mắn"],
+  "negative": ["thiếu", "khó khăn", "chậm", "lo lắng", "nguy hiểm", "mất", "không đủ", "cần gấp", "tệ", "bức xúc"],
+  "neutral": []
+}
