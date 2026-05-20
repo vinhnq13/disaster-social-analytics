@@ -9,6 +9,8 @@ import com.dsa.config.KeywordConfigLoader;
 import com.dsa.model.Post;
 import com.dsa.preprocess.BasicTextPreprocessor;
 import com.dsa.preprocess.TextPreprocessor;
+import com.dsa.sentiment.KeywordSentimentModel;
+import com.dsa.sentiment.SentimentModel;
 import com.dsa.service.DataService;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -49,8 +51,8 @@ public class DashboardController {
     private final DataService dataService;
     private final TextPreprocessor textPreprocessor;
     private final Map<String, List<String>> damageKeywords;
-    private final Map<String, List<String>> sentimentKeywords;
     private final Map<String, List<String>> reliefKeywords;
+    private final SentimentModel sentimentModel;
 
     private final ObservableList<Post> allPosts = FXCollections.observableArrayList();
     private final FilteredList<Post> filteredPosts;
@@ -86,8 +88,9 @@ public class DashboardController {
 
         KeywordConfigLoader keywordConfigLoader = new KeywordConfigLoader();
         damageKeywords = keywordConfigLoader.loadDamageKeywords();
-        sentimentKeywords = keywordConfigLoader.loadSentimentKeywords();
+        Map<String, List<String>> sentimentKeywords = keywordConfigLoader.loadSentimentKeywords();
         reliefKeywords = keywordConfigLoader.loadReliefKeywords();
+        sentimentModel = new KeywordSentimentModel(textPreprocessor, sentimentKeywords);
 
         filteredPosts = new FilteredList<>(allPosts, post -> true);
 
@@ -338,10 +341,10 @@ public class DashboardController {
         }
 
         Analyzer damageAnalyzer = new DamageAnalyzer(textPreprocessor, damageKeywords);
-        Analyzer sentimentAnalyzer = new SentimentAnalyzer(textPreprocessor, sentimentKeywords);
-        SentimentTrendAnalyzer trendAnalyzer = new SentimentTrendAnalyzer(textPreprocessor, sentimentKeywords);
+        Analyzer sentimentAnalyzer = new SentimentAnalyzer(sentimentModel);
+        SentimentTrendAnalyzer trendAnalyzer = new SentimentTrendAnalyzer(sentimentModel);
         Analyzer reliefAnalyzer = new ReliefSatisfactionAnalyzer(
-                textPreprocessor, reliefKeywords, sentimentKeywords);
+                textPreprocessor, reliefKeywords, sentimentModel);
 
         damageResults = damageAnalyzer.analyze(loadedPosts);
         sentimentResults = sentimentAnalyzer.analyze(loadedPosts);

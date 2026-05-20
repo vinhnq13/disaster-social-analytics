@@ -2,6 +2,7 @@ package com.dsa.analyzer;
 
 import com.dsa.model.Post;
 import com.dsa.preprocess.TextPreprocessor;
+import com.dsa.sentiment.SentimentModel;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -10,19 +11,17 @@ import java.util.Map;
 
 public class ReliefSatisfactionAnalyzer implements Analyzer {
 
-    private static final String DEFAULT_SENTIMENT = "neutral";
-
     private final TextPreprocessor textPreprocessor;
     private final Map<String, List<String>> reliefKeywords;
-    private final Map<String, List<String>> sentimentKeywords;
+    private final SentimentModel sentimentModel;
 
     public ReliefSatisfactionAnalyzer(
             TextPreprocessor textPreprocessor,
             Map<String, List<String>> reliefKeywords,
-            Map<String, List<String>> sentimentKeywords) {
+            SentimentModel sentimentModel) {
         this.textPreprocessor = textPreprocessor;
         this.reliefKeywords = new LinkedHashMap<>(reliefKeywords);
-        this.sentimentKeywords = new LinkedHashMap<>(sentimentKeywords);
+        this.sentimentModel = sentimentModel;
     }
 
     @Override
@@ -37,7 +36,7 @@ public class ReliefSatisfactionAnalyzer implements Analyzer {
                 continue;
             }
 
-            String sentiment = classifySentiment(text);
+            String sentiment = sentimentModel.classify(post.getContent());
             for (String category : matchedCategories) {
                 String key = category + "_" + sentiment;
                 counts.merge(key, 1, Integer::sum);
@@ -50,7 +49,7 @@ public class ReliefSatisfactionAnalyzer implements Analyzer {
     private Map<String, Integer> createEmptyCounts() {
         Map<String, Integer> counts = new LinkedHashMap<>();
         for (String category : reliefKeywords.keySet()) {
-            for (String sentiment : sentimentKeywords.keySet()) {
+            for (String sentiment : sentimentModel.getSentiments()) {
                 counts.put(category + "_" + sentiment, 0);
             }
         }
@@ -65,15 +64,6 @@ public class ReliefSatisfactionAnalyzer implements Analyzer {
             }
         }
         return matched;
-    }
-
-    private String classifySentiment(String text) {
-        for (Map.Entry<String, List<String>> entry : sentimentKeywords.entrySet()) {
-            if (containsAnyKeyword(text, entry.getValue())) {
-                return entry.getKey();
-            }
-        }
-        return DEFAULT_SENTIMENT;
     }
 
     private boolean containsAnyKeyword(String text, List<String> keywords) {

@@ -9,6 +9,8 @@ import com.dsa.config.KeywordConfigLoader;
 import com.dsa.model.Post;
 import com.dsa.preprocess.BasicTextPreprocessor;
 import com.dsa.preprocess.TextPreprocessor;
+import com.dsa.sentiment.KeywordSentimentModel;
+import com.dsa.sentiment.SentimentModel;
 import com.dsa.service.DataService;
 
 import java.util.List;
@@ -36,12 +38,13 @@ public class Main {
         Map<String, List<String>> sentimentKeywords = keywordConfigLoader.loadSentimentKeywords();
         Map<String, List<String>> reliefKeywords = keywordConfigLoader.loadReliefKeywords();
 
+        SentimentModel sentimentModel = new KeywordSentimentModel(textPreprocessor, sentimentKeywords);
+
         Analyzer damageAnalyzer = new DamageAnalyzer(textPreprocessor, damageKeywords);
-        Analyzer sentimentAnalyzer = new SentimentAnalyzer(textPreprocessor, sentimentKeywords);
+        Analyzer sentimentAnalyzer = new SentimentAnalyzer(sentimentModel);
         Analyzer reliefSatisfactionAnalyzer = new ReliefSatisfactionAnalyzer(
-                textPreprocessor, reliefKeywords, sentimentKeywords);
-        SentimentTrendAnalyzer sentimentTrendAnalyzer = new SentimentTrendAnalyzer(
-                textPreprocessor, sentimentKeywords);
+                textPreprocessor, reliefKeywords, sentimentModel);
+        SentimentTrendAnalyzer sentimentTrendAnalyzer = new SentimentTrendAnalyzer(sentimentModel);
 
         printResults("Damage Analysis", damageAnalyzer.analyze(posts));
         printResults("Sentiment Analysis", sentimentAnalyzer.analyze(posts));
