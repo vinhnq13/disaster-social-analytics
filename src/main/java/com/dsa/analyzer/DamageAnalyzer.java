@@ -14,25 +14,9 @@ public class DamageAnalyzer implements Analyzer {
     private final TextPreprocessor textPreprocessor;
     private final Map<String, List<String>> categoryKeywords;
 
-    public DamageAnalyzer(TextPreprocessor textPreprocessor) {
+    public DamageAnalyzer(TextPreprocessor textPreprocessor, Map<String, List<String>> damageKeywords) {
         this.textPreprocessor = textPreprocessor;
-        categoryKeywords = new LinkedHashMap<>();
-        categoryKeywords.put("affected_people", List.of(
-                "người dân", "bị thương", "mắc kẹt", "sơ tán", "mất tích", "nạn nhân", "hộ dân"
-        ));
-        categoryKeywords.put("economic_disruption", List.of(
-                "kinh doanh", "sản xuất", "chợ", "cửa hàng", "việc làm", "thu nhập", "gián đoạn"
-        ));
-        categoryKeywords.put("housing_damage", List.of(
-                "nhà", "mái", "sập", "tốc mái", "tường", "ngập nhà", "hư hỏng nhà"
-        ));
-        categoryKeywords.put("personal_asset_loss", List.of(
-                "tài sản", "xe máy", "đồ đạc", "vật dụng", "mất trắng", "gia súc", "hoa màu"
-        ));
-        categoryKeywords.put("infrastructure_damage", List.of(
-                "đường", "cầu", "điện", "nước", "trường học", "bệnh viện", "viễn thông", "sạt lở"
-        ));
-        categoryKeywords.put(DEFAULT_CATEGORY, List.of());
+        this.categoryKeywords = new LinkedHashMap<>(damageKeywords);
     }
 
     @Override
@@ -64,6 +48,9 @@ public class DamageAnalyzer implements Analyzer {
     }
 
     private boolean containsAnyKeyword(String text, List<String> keywords) {
+        if (keywords == null || keywords.isEmpty()) {
+            return false;
+        }
         for (String keyword : keywords) {
             if (text.contains(textPreprocessor.clean(keyword))) {
                 return true;

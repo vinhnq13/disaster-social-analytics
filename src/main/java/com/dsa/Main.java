@@ -5,6 +5,7 @@ import com.dsa.analyzer.DamageAnalyzer;
 import com.dsa.analyzer.ReliefSatisfactionAnalyzer;
 import com.dsa.analyzer.SentimentAnalyzer;
 import com.dsa.analyzer.SentimentTrendAnalyzer;
+import com.dsa.config.KeywordConfigLoader;
 import com.dsa.model.Post;
 import com.dsa.preprocess.BasicTextPreprocessor;
 import com.dsa.preprocess.TextPreprocessor;
@@ -30,10 +31,17 @@ public class Main {
 
         TextPreprocessor textPreprocessor = new BasicTextPreprocessor();
 
-        Analyzer damageAnalyzer = new DamageAnalyzer(textPreprocessor);
-        Analyzer sentimentAnalyzer = new SentimentAnalyzer(textPreprocessor);
-        Analyzer reliefSatisfactionAnalyzer = new ReliefSatisfactionAnalyzer(textPreprocessor);
-        SentimentTrendAnalyzer sentimentTrendAnalyzer = new SentimentTrendAnalyzer(textPreprocessor);
+        KeywordConfigLoader keywordConfigLoader = new KeywordConfigLoader();
+        Map<String, List<String>> damageKeywords = keywordConfigLoader.loadDamageKeywords();
+        Map<String, List<String>> sentimentKeywords = keywordConfigLoader.loadSentimentKeywords();
+        Map<String, List<String>> reliefKeywords = keywordConfigLoader.loadReliefKeywords();
+
+        Analyzer damageAnalyzer = new DamageAnalyzer(textPreprocessor, damageKeywords);
+        Analyzer sentimentAnalyzer = new SentimentAnalyzer(textPreprocessor, sentimentKeywords);
+        Analyzer reliefSatisfactionAnalyzer = new ReliefSatisfactionAnalyzer(
+                textPreprocessor, reliefKeywords, sentimentKeywords);
+        SentimentTrendAnalyzer sentimentTrendAnalyzer = new SentimentTrendAnalyzer(
+                textPreprocessor, sentimentKeywords);
 
         printResults("Damage Analysis", damageAnalyzer.analyze(posts));
         printResults("Sentiment Analysis", sentimentAnalyzer.analyze(posts));

@@ -9,29 +9,22 @@ import java.util.Map;
 
 public class SentimentAnalyzer implements Analyzer {
 
+    private static final String DEFAULT_SENTIMENT = "neutral";
+
     private final TextPreprocessor textPreprocessor;
     private final Map<String, List<String>> sentimentKeywords;
 
-    public SentimentAnalyzer(TextPreprocessor textPreprocessor) {
+    public SentimentAnalyzer(TextPreprocessor textPreprocessor, Map<String, List<String>> sentimentKeywords) {
         this.textPreprocessor = textPreprocessor;
-        sentimentKeywords = new LinkedHashMap<>();
-        sentimentKeywords.put("positive", List.of(
-                "cứu trợ", "an toàn", "đoàn kết", "hỗ trợ", "may mắn", "cảm ơn", "hy vọng", "ổn"
-        ));
-        sentimentKeywords.put("negative", List.of(
-                "sợ", "lo lắng", "đau khổ", "mất mát", "tuyệt vọng", "hoảng loạn", "khó khăn", "thiệt hại"
-        ));
-        sentimentKeywords.put("neutral", List.of(
-                "báo cáo", "thông tin", "cập nhật", "theo dõi", "dự báo"
-        ));
+        this.sentimentKeywords = new LinkedHashMap<>(sentimentKeywords);
     }
 
     @Override
     public Map<String, Integer> analyze(List<Post> posts) {
         Map<String, Integer> counts = new LinkedHashMap<>();
-        counts.put("positive", 0);
-        counts.put("negative", 0);
-        counts.put("neutral", 0);
+        for (String sentiment : sentimentKeywords.keySet()) {
+            counts.put(sentiment, 0);
+        }
 
         for (Post post : posts) {
             String sentiment = classifySentiment(textPreprocessor.clean(post.getContent()));
@@ -42,19 +35,18 @@ public class SentimentAnalyzer implements Analyzer {
     }
 
     private String classifySentiment(String text) {
-        if (containsAnyKeyword(text, sentimentKeywords.get("positive"))) {
-            return "positive";
+        for (Map.Entry<String, List<String>> entry : sentimentKeywords.entrySet()) {
+            if (containsAnyKeyword(text, entry.getValue())) {
+                return entry.getKey();
+            }
         }
-        if (containsAnyKeyword(text, sentimentKeywords.get("negative"))) {
-            return "negative";
-        }
-        if (containsAnyKeyword(text, sentimentKeywords.get("neutral"))) {
-            return "neutral";
-        }
-        return "neutral";
+        return DEFAULT_SENTIMENT;
     }
 
     private boolean containsAnyKeyword(String text, List<String> keywords) {
+        if (keywords == null || keywords.isEmpty()) {
+            return false;
+        }
         for (String keyword : keywords) {
             if (text.contains(textPreprocessor.clean(keyword))) {
                 return true;
