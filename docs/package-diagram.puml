@@ -9,6 +9,13 @@ package "com.dsa" {
   [Main]
 }
 
+package "com.dsa.ui" {
+  [DashboardApp]
+  [DashboardController]
+  [ChartBuilder]
+  [ResultFormatter]
+}
+
 package "com.dsa.model" {
   [Post]
 }
@@ -18,13 +25,23 @@ package "com.dsa.collector" {
   [JsonDataCollector]
 }
 
+package "com.dsa.config" {
+  [KeywordConfigLoader]
+}
+
 package "com.dsa.preprocess" {
   [TextPreprocessor]
   [BasicTextPreprocessor]
 }
 
+package "com.dsa.sentiment" {
+  [SentimentModel]
+  [KeywordSentimentModel]
+}
+
 package "com.dsa.service" {
   [DataService]
+  [AnalysisService]
 }
 
 package "com.dsa.analyzer" {
@@ -35,38 +52,65 @@ package "com.dsa.analyzer" {
   [ReliefSatisfactionAnalyzer]
 }
 
-' Package-level dependencies
+package "resources" <<Folder>> {
+  [posts.json]
+  [damage-keywords.json]
+  [sentiment-keywords.json]
+  [relief-keywords.json]
+}
+
+' Application layer
+
+com.dsa ..> com.dsa.service : uses
+com.dsa.ui ..> com.dsa.service : uses
+com.dsa.ui ..> com.dsa.model : uses
+
+' Service layer
 
 com.dsa.service ..> com.dsa.collector : uses
 com.dsa.service ..> com.dsa.model : uses
+com.dsa.service ..> com.dsa.config : uses
+com.dsa.service ..> com.dsa.preprocess : uses
+com.dsa.service ..> com.dsa.sentiment : uses
+com.dsa.service ..> com.dsa.analyzer : uses
+
+' Collection and configuration
 
 com.dsa.collector ..> com.dsa.model : uses
+com.dsa.config ..> resources : reads JSON
+
+' Analysis pipeline
 
 com.dsa.analyzer ..> com.dsa.model : uses
 com.dsa.analyzer ..> com.dsa.preprocess : uses
+com.dsa.analyzer ..> com.dsa.sentiment : uses
 
-com.dsa ..> com.dsa.service : uses
-com.dsa ..> com.dsa.analyzer : uses
+com.dsa.sentiment ..> com.dsa.preprocess : uses
 
-note bottom of com.dsa.model
-  Domain layer:
-  shared data types
-end note
-
-note bottom of com.dsa.collector
-  Data collection layer
-end note
-
-note bottom of com.dsa.preprocess
-  Text preprocessing layer
+note right of com.dsa.config
+  KeywordConfigLoader reads:
+  • damage-keywords.json
+  • sentiment-keywords.json
+  • relief-keywords.json
 end note
 
 note bottom of com.dsa.service
-  Loads posts via DataCollector
+  DataService: load posts
+  AnalysisService: run all analyzers
+end note
+
+note bottom of com.dsa.sentiment
+  Replaceable sentiment
+  classification (Strategy)
 end note
 
 note bottom of com.dsa.analyzer
-  Analysis strategies
+  Keyword-driven analysis;
+  categories from JSON config
+end note
+
+note bottom of com.dsa.collector
+  Extensible data sources
 end note
 
 @enduml

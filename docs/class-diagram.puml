@@ -15,13 +15,13 @@ package "com.dsa.model" {
     - source : String
     --
     + Post()
-    + Post(content : String, date : String, source : String)
+    + Post(content, date, source)
     + getContent() : String
-    + setContent(content : String) : void
+    + setContent(content) : void
     + getDate() : String
-    + setDate(date : String) : void
+    + setDate(date) : void
     + getSource() : String
-    + setSource(source : String) : void
+    + setSource(source) : void
     + toString() : String
   }
 }
@@ -44,6 +44,19 @@ package "com.dsa.collector" {
   DataCollector <|.. JsonDataCollector
 }
 
+' --- Config ---
+
+package "com.dsa.config" {
+  class KeywordConfigLoader {
+    - gson : Gson
+    --
+    + KeywordConfigLoader()
+    + loadDamageKeywords() : Map<String, List<String>>
+    + loadSentimentKeywords() : Map<String, List<String>>
+    + loadReliefKeywords() : Map<String, List<String>>
+  }
+}
+
 ' --- Preprocess ---
 
 package "com.dsa.preprocess" {
@@ -52,15 +65,30 @@ package "com.dsa.preprocess" {
   }
 
   class BasicTextPreprocessor {
-    - {static} URL_PATTERN : Pattern
-    - {static} HASHTAG_SYMBOL_PATTERN : Pattern
-    - {static} PUNCTUATION_PATTERN : Pattern
-    - {static} EXTRA_SPACES_PATTERN : Pattern
-    --
     + clean(text : String) : String
   }
 
   TextPreprocessor <|.. BasicTextPreprocessor
+}
+
+' --- Sentiment ---
+
+package "com.dsa.sentiment" {
+  interface SentimentModel {
+    + classify(text : String) : String
+    + getSentiments() : List<String>
+  }
+
+  class KeywordSentimentModel {
+    - textPreprocessor : TextPreprocessor
+    - sentimentKeywords : Map<String, List<String>>
+    --
+    + KeywordSentimentModel(textPreprocessor, sentimentKeywords)
+    + classify(text : String) : String
+    + getSentiments() : List<String>
+  }
+
+  SentimentModel <|.. KeywordSentimentModel
 }
 
 ' --- Service ---
@@ -72,6 +100,20 @@ package "com.dsa.service" {
     + DataService()
     + DataService(dataCollector : DataCollector)
     + loadPosts() : List<Post>
+  }
+
+  class AnalysisService {
+    - damageAnalyzer : DamageAnalyzer
+    - sentimentAnalyzer : SentimentAnalyzer
+    - sentimentTrendAnalyzer : SentimentTrendAnalyzer
+    - reliefSatisfactionAnalyzer : ReliefSatisfactionAnalyzer
+    --
+    + AnalysisService(damage, sentiment, trend, relief)
+    + {static} createDefault() : AnalysisService
+    + analyzeDamage(posts) : Map<String, Integer>
+    + analyzeSentiment(posts) : Map<String, Integer>
+    + analyzeSentimentTrend(posts) : Map<String, Map<String, Integer>>
+    + analyzeReliefSatisfaction(posts) : Map<String, Integer>
   }
 }
 
@@ -86,33 +128,31 @@ package "com.dsa.analyzer" {
     - textPreprocessor : TextPreprocessor
     - categoryKeywords : Map<String, List<String>>
     --
-    + DamageAnalyzer(textPreprocessor : TextPreprocessor)
-    + analyze(posts : List<Post>) : Map<String, Integer>
+    + DamageAnalyzer(textPreprocessor, damageKeywords)
+    + analyze(posts) : Map<String, Integer>
   }
 
   class SentimentAnalyzer {
-    - textPreprocessor : TextPreprocessor
-    - sentimentKeywords : Map<String, List<String>>
+    - sentimentModel : SentimentModel
     --
-    + SentimentAnalyzer(textPreprocessor : TextPreprocessor)
-    + analyze(posts : List<Post>) : Map<String, Integer>
+    + SentimentAnalyzer(sentimentModel)
+    + analyze(posts) : Map<String, Integer>
+  }
+
+  class SentimentTrendAnalyzer {
+    - sentimentModel : SentimentModel
+    --
+    + SentimentTrendAnalyzer(sentimentModel)
+    + analyze(posts) : Map<String, Map<String, Integer>>
   }
 
   class ReliefSatisfactionAnalyzer {
     - textPreprocessor : TextPreprocessor
     - reliefKeywords : Map<String, List<String>>
-    - sentimentKeywords : Map<String, List<String>>
+    - sentimentModel : SentimentModel
     --
-    + ReliefSatisfactionAnalyzer(textPreprocessor : TextPreprocessor)
-    + analyze(posts : List<Post>) : Map<String, Integer>
-  }
-
-  class SentimentTrendAnalyzer {
-    - textPreprocessor : TextPreprocessor
-    - sentimentKeywords : Map<String, List<String>>
-    --
-    + SentimentTrendAnalyzer(textPreprocessor : TextPreprocessor)
-    + analyze(posts : List<Post>) : Map<String, Map<String, Integer>>
+    + ReliefSatisfactionAnalyzer(textPreprocessor, reliefKeywords, sentimentModel)
+    + analyze(posts) : Map<String, Integer>
   }
 
   Analyzer <|.. DamageAnalyzer
@@ -120,56 +160,119 @@ package "com.dsa.analyzer" {
   Analyzer <|.. ReliefSatisfactionAnalyzer
 }
 
+' --- UI ---
+
+package "com.dsa.ui" {
+  class DashboardApp {
+    + {static} main(args : String[])
+    + start(stage : Stage) : void
+  }
+
+  class DashboardController {
+    - dataService : DataService
+    - analysisService : AnalysisService
+    --
+    + DashboardController()
+    + getRoot() : BorderPane
+  }
+
+  class ChartBuilder <<utility>>
+  class ResultFormatter <<utility>>
+}
+
+' --- Config resources (classpath) ---
+
+together {
+  object "damage-keywords.json" as damageJson <<config file>>
+  object "sentiment-keywords.json" as sentimentJson <<config file>>
+  object "relief-keywords.json" as reliefJson <<config file>>
+}
+
 ' --- Application entry ---
 
 package "com.dsa" {
   class Main {
     + {static} main(args : String[]) : void
-    - {static} printResults(title : String, results : Map<String, Integer>) : void
-    - {static} printSentimentTrendResults(trendByDate : Map<String, Map<String, Integer>>) : void
+    - {static} printResults(...) : void
+    - {static} printSentimentTrendResults(...) : void
   }
 }
 
-' --- Dependencies ---
+' --- Data flow ---
 
-Main --> DataService : uses
-Main ..> BasicTextPreprocessor : creates
-Main ..> DamageAnalyzer : creates
-Main ..> SentimentAnalyzer : creates
-Main ..> ReliefSatisfactionAnalyzer : creates
-Main ..> SentimentTrendAnalyzer : creates
-Main ..> Analyzer : uses
+Main --> DataService : load posts
+Main --> AnalysisService : analyze
 
-DataService o--> DataCollector : uses
+DashboardApp ..> DashboardController : creates
+DashboardController --> DataService : load posts
+DashboardController --> AnalysisService : analyze
+
+DataService o--> DataCollector
 DataService ..> JsonDataCollector : default
 
 JsonDataCollector ..> Post : returns
 
-DataService ..> Post : returns
+KeywordConfigLoader ..> damageJson : reads
+KeywordConfigLoader ..> sentimentJson : reads
+KeywordConfigLoader ..> reliefJson : reads
 
-DamageAnalyzer --> TextPreprocessor : uses
-SentimentAnalyzer --> TextPreprocessor : uses
-ReliefSatisfactionAnalyzer --> TextPreprocessor : uses
-SentimentTrendAnalyzer --> TextPreprocessor : uses
+AnalysisService o--> DamageAnalyzer
+AnalysisService o--> SentimentAnalyzer
+AnalysisService o--> SentimentTrendAnalyzer
+AnalysisService o--> ReliefSatisfactionAnalyzer
 
-DamageAnalyzer ..> Post : analyzes
-SentimentAnalyzer ..> Post : analyzes
-ReliefSatisfactionAnalyzer ..> Post : analyzes
-SentimentTrendAnalyzer ..> Post : analyzes
+AnalysisService ..> KeywordConfigLoader : createDefault()
+AnalysisService ..> KeywordSentimentModel : createDefault()
+AnalysisService ..> BasicTextPreprocessor : createDefault()
 
-Analyzer ..> Post : analyzes
+DamageAnalyzer --> TextPreprocessor
+ReliefSatisfactionAnalyzer --> TextPreprocessor
+
+SentimentAnalyzer --> SentimentModel
+SentimentTrendAnalyzer --> SentimentModel
+ReliefSatisfactionAnalyzer --> SentimentModel
+
+KeywordSentimentModel --> TextPreprocessor
+
+KeywordConfigLoader ..> DamageAnalyzer : keywords via\nAnalysisService.createDefault()
+KeywordConfigLoader ..> KeywordSentimentModel : sentiment keywords
+KeywordConfigLoader ..> ReliefSatisfactionAnalyzer : relief keywords
+
+DamageAnalyzer ..> Post
+SentimentAnalyzer ..> Post
+SentimentTrendAnalyzer ..> Post
+ReliefSatisfactionAnalyzer ..> Post
 
 note right of SentimentTrendAnalyzer
   Does not implement Analyzer
-  (different return type:
-  nested Map by date)
+  (returns nested Map by date)
+end note
+
+note bottom of KeywordConfigLoader
+  Loads JSON from
+  src/main/resources/config/
+  Injected into analyzers
+  through AnalysisService
+end note
+
+note right of DamageAnalyzer
+  categoryKeywords : Map
+  loaded from damage-keywords.json
+end note
+
+note right of ReliefSatisfactionAnalyzer
+  reliefKeywords from relief-keywords.json
+  sentiment via SentimentModel
+end note
+
+note bottom of AnalysisService
+  Central orchestration:
+  add analyzer + method here
 end note
 
 note bottom of DataCollector
-  Future collectors:
-  YouTubeDataCollector,
-  FacebookDataCollector,
-  XDataCollector
+  Future: YouTubeDataCollector,
+  FacebookDataCollector, XDataCollector
 end note
 
 @enduml
