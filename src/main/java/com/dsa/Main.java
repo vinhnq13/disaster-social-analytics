@@ -1,16 +1,7 @@
 package com.dsa;
 
-import com.dsa.analyzer.Analyzer;
-import com.dsa.analyzer.DamageAnalyzer;
-import com.dsa.analyzer.ReliefSatisfactionAnalyzer;
-import com.dsa.analyzer.SentimentAnalyzer;
-import com.dsa.analyzer.SentimentTrendAnalyzer;
-import com.dsa.config.KeywordConfigLoader;
 import com.dsa.model.Post;
-import com.dsa.preprocess.BasicTextPreprocessor;
-import com.dsa.preprocess.TextPreprocessor;
-import com.dsa.sentiment.KeywordSentimentModel;
-import com.dsa.sentiment.SentimentModel;
+import com.dsa.service.AnalysisService;
 import com.dsa.service.DataService;
 
 import java.util.List;
@@ -31,25 +22,12 @@ public class Main {
 
         System.out.println("Loaded " + posts.size() + " posts.\n");
 
-        TextPreprocessor textPreprocessor = new BasicTextPreprocessor();
+        AnalysisService analysisService = AnalysisService.createDefault();
 
-        KeywordConfigLoader keywordConfigLoader = new KeywordConfigLoader();
-        Map<String, List<String>> damageKeywords = keywordConfigLoader.loadDamageKeywords();
-        Map<String, List<String>> sentimentKeywords = keywordConfigLoader.loadSentimentKeywords();
-        Map<String, List<String>> reliefKeywords = keywordConfigLoader.loadReliefKeywords();
-
-        SentimentModel sentimentModel = new KeywordSentimentModel(textPreprocessor, sentimentKeywords);
-
-        Analyzer damageAnalyzer = new DamageAnalyzer(textPreprocessor, damageKeywords);
-        Analyzer sentimentAnalyzer = new SentimentAnalyzer(sentimentModel);
-        Analyzer reliefSatisfactionAnalyzer = new ReliefSatisfactionAnalyzer(
-                textPreprocessor, reliefKeywords, sentimentModel);
-        SentimentTrendAnalyzer sentimentTrendAnalyzer = new SentimentTrendAnalyzer(sentimentModel);
-
-        printResults("Damage Analysis", damageAnalyzer.analyze(posts));
-        printResults("Sentiment Analysis", sentimentAnalyzer.analyze(posts));
-        printSentimentTrendResults(sentimentTrendAnalyzer.analyze(posts));
-        printResults("Relief Satisfaction Analysis", reliefSatisfactionAnalyzer.analyze(posts));
+        printResults("Damage Analysis", analysisService.analyzeDamage(posts));
+        printResults("Sentiment Analysis", analysisService.analyzeSentiment(posts));
+        printSentimentTrendResults(analysisService.analyzeSentimentTrend(posts));
+        printResults("Relief Satisfaction Analysis", analysisService.analyzeReliefSatisfaction(posts));
     }
 
     private static void printSentimentTrendResults(Map<String, Map<String, Integer>> trendByDate) {

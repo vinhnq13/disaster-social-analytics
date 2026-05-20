@@ -1,16 +1,7 @@
 package com.dsa.ui;
 
-import com.dsa.analyzer.Analyzer;
-import com.dsa.analyzer.DamageAnalyzer;
-import com.dsa.analyzer.ReliefSatisfactionAnalyzer;
-import com.dsa.analyzer.SentimentAnalyzer;
-import com.dsa.analyzer.SentimentTrendAnalyzer;
-import com.dsa.config.KeywordConfigLoader;
 import com.dsa.model.Post;
-import com.dsa.preprocess.BasicTextPreprocessor;
-import com.dsa.preprocess.TextPreprocessor;
-import com.dsa.sentiment.KeywordSentimentModel;
-import com.dsa.sentiment.SentimentModel;
+import com.dsa.service.AnalysisService;
 import com.dsa.service.DataService;
 import javafx.beans.binding.Bindings;
 import javafx.collections.FXCollections;
@@ -49,10 +40,7 @@ public class DashboardController {
 
     private final BorderPane root;
     private final DataService dataService;
-    private final TextPreprocessor textPreprocessor;
-    private final Map<String, List<String>> damageKeywords;
-    private final Map<String, List<String>> reliefKeywords;
-    private final SentimentModel sentimentModel;
+    private final AnalysisService analysisService;
 
     private final ObservableList<Post> allPosts = FXCollections.observableArrayList();
     private final FilteredList<Post> filteredPosts;
@@ -84,13 +72,7 @@ public class DashboardController {
 
     public DashboardController() {
         dataService = new DataService();
-        textPreprocessor = new BasicTextPreprocessor();
-
-        KeywordConfigLoader keywordConfigLoader = new KeywordConfigLoader();
-        damageKeywords = keywordConfigLoader.loadDamageKeywords();
-        Map<String, List<String>> sentimentKeywords = keywordConfigLoader.loadSentimentKeywords();
-        reliefKeywords = keywordConfigLoader.loadReliefKeywords();
-        sentimentModel = new KeywordSentimentModel(textPreprocessor, sentimentKeywords);
+        analysisService = AnalysisService.createDefault();
 
         filteredPosts = new FilteredList<>(allPosts, post -> true);
 
@@ -340,16 +322,10 @@ public class DashboardController {
             return;
         }
 
-        Analyzer damageAnalyzer = new DamageAnalyzer(textPreprocessor, damageKeywords);
-        Analyzer sentimentAnalyzer = new SentimentAnalyzer(sentimentModel);
-        SentimentTrendAnalyzer trendAnalyzer = new SentimentTrendAnalyzer(sentimentModel);
-        Analyzer reliefAnalyzer = new ReliefSatisfactionAnalyzer(
-                textPreprocessor, reliefKeywords, sentimentModel);
-
-        damageResults = damageAnalyzer.analyze(loadedPosts);
-        sentimentResults = sentimentAnalyzer.analyze(loadedPosts);
-        trendResults = trendAnalyzer.analyze(loadedPosts);
-        reliefResults = reliefAnalyzer.analyze(loadedPosts);
+        damageResults = analysisService.analyzeDamage(loadedPosts);
+        sentimentResults = analysisService.analyzeSentiment(loadedPosts);
+        trendResults = analysisService.analyzeSentimentTrend(loadedPosts);
+        reliefResults = analysisService.analyzeReliefSatisfaction(loadedPosts);
 
         lastReport = ResultFormatter.formatFullReport(
                 loadedPosts, damageResults, sentimentResults, trendResults, reliefResults);
